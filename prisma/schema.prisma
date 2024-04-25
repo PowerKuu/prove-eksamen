@@ -22,8 +22,8 @@ model Class {
 
 model UserOnClass {
   id    String @id @default(cuid())
-  user  User  @relation(fields: [userId], references: [id])
-  class Class @relation(fields: [classId], references: [id])
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
 
   userId  String
   classId String
