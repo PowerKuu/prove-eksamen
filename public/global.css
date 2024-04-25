@@ -1,0 +1,114 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@200;300;400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Lato:wght@200;300;400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@200;300;400;500;600&display=swap");
+
+:root {
+	--page-padding: 7vw;
+	
+	--normal-height: 3rem;
+	--border-radius: 10px;
+
+	--border-width: 2px;
+}
+
+html, body {
+	overflow-x: hidden;
+	overflow-y: auto;
+	scroll-behavior: smooth;
+
+	max-width: 100%;
+}
+
+* {
+	font-family: "Figtree", sans-serif;
+	font-weight: 500;
+
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+.text-overflow {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.text-underline {
+	text-decoration: underline;
+}
+
+.text-bold {
+	font-weight: 600 !important;
+}
+
+
+.pointer {
+	cursor: pointer;
+}
+
+.border {
+	border: var(--border-width) solid var(--neutral);
+	border-radius: var(--border-radius);
+}
+
+a {
+	text-decoration: none;
+	color: inherit;
+}
+
+*[data-hide="true"] {
+	opacity: 0;
+	pointer-events: none;
+}
+
+/* custom scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--neutral);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--text);
+  border-radius: var(--border-radius);
+
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text);
+}
+
+
+
+nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+
+    width: 100%;
+    height: var(--normal-height);
+    padding: 0 var(--page-padding);
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+nav ul {
+    display: flex;
+    gap: 1rem;
+
+    list-style: none;
+}
+
+
+main {
+    padding: var(--page-padding);
+}
