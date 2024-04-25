@@ -6,18 +6,201 @@
     <title>Document</title>
 
     <link rel="stylesheet" type="text/css" href="/global.css">
+    <script src="/dashboard/dashboard.js" defer></script>
+
+    <style>
+        .class {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+
+            padding: 1rem;
+
+            border: 1px solid black;
+            border-radius: var(--border-radius);
+        }
+
+        .class-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .class-buttons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .user-on-class {
+            display: flex;
+            gap: 0.5rem;
+
+            padding: 0.5rem;
+
+            border: 1px solid black;
+
+            border-radius: var(--border-radius);
+            
+            justify-content: space-between;
+        }
+
+        .user-on-class > div {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-edit-form, .class-edit-form, .user-add-form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .user-edit-form {
+            width: 350px;
+        }
+
+        .class-edit-form {
+            width: 200px;
+        }
+
+        .user-add-form {
+            width: 200px;
+        }
+
+        .admin {
+            /* Flex is added by javascript */
+            gap: 1rem;
+            flex-direction: column;
+        }
+
+        .classes {
+            display: flex;
+            gap: 1rem;
+            flex-direction: column;
+        }
+
+        .admin-forms {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+
+            padding: 1rem;
+
+            border: 1px solid black;
+
+            border-radius: var(--border-radius);
+        }
+    </style>
 </head>
 <body>
+    <div class="popup" id="class-edit-popup">
+        <div class="popup-content">
+            <div class="popup-head">
+                <h2>Edit class</h2>
+                <button class="close-popup" onclick="closeClassEditPopup()">Close</button>
+            </div>
+
+            <form action="/class/update" method="post" class="class-edit-form">
+                <input id="edit-classId" type="text" name="id" class="hidden">
+
+                <input type="text" name="name" placeholder="Name">
+                
+                <button type="submit">Edit class</button>
+            </form>
+        </div>
+    </div>
+
+
+    <div class="popup" id="user-edit-popup">
+        <div class="popup-content">
+            <div class="popup-head">
+                <h2>User</h2>
+                <button class="close-popup" onclick="closeUserEditPopup()">Close</button>
+            </div>
+
+            <form action="/class/updateUser" method="post" class="user-edit-form">
+                <input id="edit-user-classId" type="text" name="classId" class="hidden">
+                <input id="edit-user-userId" type="text" name="userId" class="hidden">
+
+
+                <input id="edit-user-title" type="text" name="title" placeholder="Title">
+                <textarea id="edit-user-notes" type="text" name="notes" placeholder="Notes"></textarea>
+
+                <button type="submit">Edit user</button>
+            </form>
+        </div>
+    </div>
+
+    
+    <div class="popup" id="user-add-popup">
+        <div class="popup-content">
+            <div class="popup-head">
+                <h2>Add user</h2>
+                <button class="close-popup" onclick="closeUserAddPopup()">Close</button>
+            </div>
+
+            <form action="/class/addUser" method="post" class="user-add-form">
+                <input id="add-classId" type="text" name="classId" class="hidden">
+
+                <select id="users-select" name="userId">
+                </select>
+
+                <button type="submit">Add user</button>
+            </form>
+        </div>
+    </div>
+
+
     <nav>
-        <h3>Nydalen-vgs</h3>
+        <ul>
+            <li><h3>Nydalen-vgs</h3></li>
+            <li><h4 id="role"></li>
+        </ul>
 
         <ul>
             <li><a href="/dashboard" class="text-underline">Klasser</a></li>
-            <li><a href="/dashboard/admin">Admin</a></li>
-            <li><a href="/logout">Logg ut</a></li>
+            <li><a href="/user/logout">Logg ut</a></li>
         </ul>
     </nav>
 
-    
+    <main>
+        <div class="admin admin-only">
+            <h2>Admin</h2>
+
+            <div class="admin-forms">
+                <form action="/class/create" method="post">
+                    <input type="text" name="name" placeholder="Name">
+                    <button type="submit">Create class</button>
+                </form>
+
+                <form action="/user/create" method="post">
+                    <input type="text" name="email" placeholder="Email">
+                    <input type="text" name="name" placeholder="Name">
+
+                    <select name="role">
+                        <option value="STUDENT">Student</option>
+                        <option value="TEACHER">Teacher</option>
+                        <option value="ADMIN">Admin</option>
+                    </select>
+
+                    <button type="submit">Create user</button>
+                </form>
+
+                <form action="/user/delete" method="post">
+                    <select id="delete-user-select" name="id">
+                        
+                    </select>
+                    <button type="submit">Delete user</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="classes">
+            <h2>Klasser</h2>
+            <div id="classes" class="classes"></div>
+        </div>
+    </main>
 </body>
 </html>

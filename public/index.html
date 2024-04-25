@@ -4,8 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+
+    <link rel="stylesheet" href="/global.css">
 </head>
 <body>
-    
+    <main>
+        <h2>Nydalen-vgs</h2>
+
+        <form action="/user/login" method="post">
+            <input type="text" name="email" placeholder="email">
+            <input type="password" name="password" placeholder="password">
+            <button type="submit">Login</button>
+        </form>
+
+        <a href="/dashboard" class="text-underline">Go to dashboard logged in</a>
+    </main>
 </body>
 </html>

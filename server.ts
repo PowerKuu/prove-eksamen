@@ -14,16 +14,20 @@ const prisma = new PrismaClient()
 const port = process.env.PORT || 3000
 
 app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
 
-app.use((req, res, next) => {
-    if (req.path === "/") return next()
+const allowedPaths = ["/", "favicon.ico", "/global.css", "/user/login"]
+
+app.use(async (req, res, next) => {
+    if (allowedPaths.includes(req.path)) return next()
+
 
     const token: string | null = req.cookies.token
 
     if (!token) return res.redirect("/")
     
-    const user = prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
         where: {
             token: token
         },
@@ -46,6 +50,8 @@ app.use(express.static(join(__dirname, "public")))
 app.post("/user/login", async (req, res) => {
     const { email, password } = req.body
 
+    if (!email || !password) return res.status(400).redirect("/")
+
     const user = await prisma.user.findUnique({
         where: {
             email: email
@@ -54,7 +60,7 @@ app.post("/user/login", async (req, res) => {
 
     const passwordHash = crypto.createHash("sha256").update(password).digest("hex")
 
-    if (!user) return res.status(404).json({ error: "User not found" })
+    if (!user) return res.status(404).redirect("/")
     
     if (!user.password) {
         await prisma.user.update({
@@ -67,11 +73,16 @@ app.post("/user/login", async (req, res) => {
         })
     }
     else if (user.password !== passwordHash) {
-        return res.status(401).json({ error: "Invalid password" })
+        return res.status(401).redirect("/")
     }
 
     res.cookie("token", user.token)
     res.redirect("/dashboard")
+})
+
+app.get("/user/logout", (req, res) => {
+    res.clearCookie("token")
+    res.redirect("/")
 })
 
 app.post("/user/create", async (req, res) => {
@@ -88,26 +99,25 @@ app.post("/user/create", async (req, res) => {
 
     if (userExists) return res.status(400).json({ error: "User already exists" })
 
-    const newUser = await prisma.user.create({
+    await prisma.user.create({
         data: {
             email: user.email,
-            name: user.name
+            name: user.name,
+            role: user.role
         }
     })
 
-    res.json(newUser)
+    res.redirect("/dashboard")
 })
 
 app.post("/user/update", async (req, res) => {
     const self: UserWithClasses = res.locals.user
-
         
     const { id, user }: {
         id: string
         user: Partial<{
             name: string,
-            title: string,
-            phone: string,
+            password: string,
             role: Role,
         }>
     } = req.body
@@ -116,6 +126,8 @@ app.post("/user/update", async (req, res) => {
         return res.status(403).json({ error: "Unauthorized" })
     }
 
+    const newPassword = user.password ? crypto.createHash("sha256").update(user.password).digest("hex") : undefined
+
     const updatedUser = await prisma.user.update({
         where: {
             id: id
@@ -123,8 +135,8 @@ app.post("/user/update", async (req, res) => {
 
         data: {
             name: user.name,
-            title: user.title,
-            phone: user.phone,
+            password: newPassword,
+
             role: self.role == Role.ADMIN ? user.role : self.role,
         }
     })
@@ -132,23 +144,23 @@ app.post("/user/update", async (req, res) => {
     res.json(updatedUser)
 })
 
-app.get("/user/delete", async (req, res) => {
+app.post("/user/delete", async (req, res) => {
     const self: User = res.locals.user
 
     if (self.role !== Role.ADMIN) return res.status(403).json({ error: "Unauthorized" })
 
-    const { id } = req.query
+    const { id } = req.body
 
-    const deletedUser = await prisma.user.delete({
+    await prisma.user.delete({
         where: {
             id: id as string
         }
     })
 
-    res.json(deletedUser)
+    res.redirect("/dashboard")
 })
 
-app.get("/user/getAll", async (req, res) => {
+app.post("/user/getAll", async (req, res) => {
     const self: UserWithClasses = res.locals.user
 
     if (self.role !== Role.ADMIN) return res.status(403).json({ error: "Unauthorized" })
@@ -158,7 +170,11 @@ app.get("/user/getAll", async (req, res) => {
     res.json(users)
 })
 
+app.post("/user/self", async (req, res) => {
+    const self: UserWithClasses = res.locals.user
 
+    res.json(self)
+})
 
 
 app.post("/class/delete", async (req, res) => {
@@ -180,16 +196,15 @@ app.post("/class/create", async (req, res) => {
 
     if (self.role !== Role.ADMIN) return res.status(403).json({ error: "Unauthorized" })
 
-    const { name, description } = req.body
+    const { name } = req.body
 
-    const newClass = await prisma.class.create({
+    await prisma.class.create({
         data: {
             name,
-            description
         }
     })
 
-    res.json(newClass)
+    res.redirect("/dashboard")
 })
 
 app.post("/class/update", async (req, res) => {
@@ -198,58 +213,77 @@ app.post("/class/update", async (req, res) => {
     if (self.role === Role.STUDENT) return res.status(403).json({ error: "Unauthorized" })
 
     const id = req.body.id
+    const name: string = req.body.name
 
-    const { name, description }: {
-        name: string,
-        description: string
-    } = req.body.newClass
-
-    if (self.role == Role.TEACHER && self.classes.find(selfClass => selfClass.id !== id)) {
+    if (self.role == Role.TEACHER && !self.classes.find(selfClass => selfClass.id !== id)) {
         return res.status(400).json({ error: "Unauthorized" })
     }
 
-    const updatedClass = await prisma.class.update({
+    await prisma.class.update({
         where: {
             id: id
         },
 
-        data: { name, description }
+        data: { name }
     })
 
-    res.json(updatedClass)
+    res.redirect("/dashboard")
 })
 
-app.get("/class/getAvailable", async (req, res) => {
+app.post("/class/getAvailable", async (req, res) => {
     const self: UserWithClasses = res.locals.user
 
-    if (self.role === Role.ADMIN) {
-        return res.json(await prisma.class.findMany({
-            include: {
-                users: true
-            }
-        }))
-    }
-
-    if (self.role === Role.TEACHER || self.role === Role.STUDENT) {
-        return res.json(await prisma.class.findMany({
-            where: {
-                users: {
-                    some: {
-                        id: self.id
-                    }
-                }
-            },
-
-            include: {
-                users: {
-                    select: {
-                        notes: self.role === Role.TEACHER,
-                        title: true,
-                    }
+    return res.json(await prisma.class.findMany({
+        where: self.role === Role.ADMIN ? {} : {
+            users: {
+                some: {
+                    userId: self.id
                 }
             }
-        }))
-    }
+        },
+
+        include: {
+            users: {
+                select: {
+                    notes: self.role !== Role.STUDENT,
+                    title: true,
+
+                    classId: true,
+                    userId: true,
+                    
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            role: true
+                        }
+                    }
+                }
+            }
+        }
+    }))
+
+})
+
+app.post("/class/getAvailableUsers", async (req, res) => {
+    const self: UserWithClasses = res.locals.user
+
+    if (self.role !== Role.ADMIN) return res.status(403).json({ error: "Unauthorized" })
+
+    const id: string = req.body.id
+
+    const users = await prisma.user.findMany({
+        where: {
+            classes: {
+                none: {
+                    classId: id
+                }
+            }
+        }
+    })
+
+    res.json(users)
 })
 
 
@@ -259,15 +293,11 @@ app.get("/class/getAvailable", async (req, res) => {
 app.post("/class/addUser", async (req, res) => {
     const self: UserWithClasses = res.locals.user
 
-    if (self.role === Role.STUDENT) return res.status(403).json({ error: "Unauthorized" })
+    if (self.role !== Role.ADMIN) return res.status(403).json({ error: "Unauthorized" })
 
     const { userId, classId } = req.body
 
-    if (self.role == Role.TEACHER && self.classes.find(selfClass => selfClass.id !== classId)) {
-        return res.status(400).json({ error: "Unauthorized" })
-    }
-
-    const userOnClass = await prisma.userOnClass.create({
+    await prisma.userOnClass.create({
         data: {
             user: {
                 connect: {
@@ -283,7 +313,7 @@ app.post("/class/addUser", async (req, res) => {
         }
     })
 
-    res.json(userOnClass)
+    res.redirect("/dashboard")
 })
 
 app.post("/class/updateUser", async (req, res) => {
@@ -291,17 +321,15 @@ app.post("/class/updateUser", async (req, res) => {
 
     if (self.role === Role.STUDENT) return res.status(403).json({ error: "Unauthorized" })
 
-    const userId: string = req.body.userId
-    const classId: string = req.body.classId
+    const { notes, title, userId, classId }: {
+        userId: string,
+        classId: string,
 
-    const { user }: {
-        user: Partial<{
-            notes: string,
-            title: string
-        }>
+        notes: string,
+        title: string
     } = req.body
 
-    if (self.role == Role.TEACHER && self.classes.find(selfClass => selfClass.id !== classId)) {
+    if (self.role == Role.TEACHER && !self.classes.find(selfClass => selfClass.id !== classId)) {
         return res.status(400).json({ error: "Unauthorized" })
     }
 
@@ -312,12 +340,12 @@ app.post("/class/updateUser", async (req, res) => {
         },
 
         data: {
-            notes: user.notes,
-            title: user.title
+            notes: notes,
+            title: title
         }
     })
 
-    res.json({ success: true })
+    res.redirect("/dashboard")
 })
 
 app.post("/class/removeUser", async (req, res) => {
@@ -328,7 +356,7 @@ app.post("/class/removeUser", async (req, res) => {
     const userId: string = req.body.userId
     const classId: string = req.body.classId
 
-    if (self.role == Role.TEACHER && self.classes.find(selfClass => selfClass.id !== classId)) {
+    if (self.role == Role.TEACHER && !self.classes.find(selfClass => selfClass.id !== classId)) {
         return res.status(400).json({ error: "Unauthorized" })
     }
 
@@ -344,13 +372,6 @@ app.post("/class/removeUser", async (req, res) => {
 
 
 
-
-
-
-app.get("/logout", (req, res) => {
-    res.clearCookie("token")
-    res.redirect("/")
-})
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`)

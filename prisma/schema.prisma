@@ -16,7 +16,6 @@ datasource db {
 model Class {
   id          String  @id @default(cuid())
   name        String
-  description String?
   users     UserOnClass[]
 }
 
@@ -42,9 +41,6 @@ model User {
   email String @unique
 
   password String?
-
-  title String?
-  phone String? @unique
 
   token String @unique @default(cuid())
 

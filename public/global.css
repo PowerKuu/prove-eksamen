@@ -82,13 +82,78 @@ a {
   background-color: var(--text);
 }
 
+.hidden {
+	display: none;
+}
+
+.admin-only {
+	display: none;
+}
+
+.teacher-only {
+	display: none;
+}
+
+.popup {
+	position: fixed;
+	top: 0;
+	left: 0;
+
+	width: 100%;
+	height: 100vh;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+	background-color: rgba(0, 0, 0, 0.5);
+	backdrop-filter: blur(5px);
+
+	z-index: 11;
+
+	display: none;
+}
+
+.popup-content {
+	position: relative;
+
+	max-width: 500px;
+	padding:  1.5rem;
+	background-color: white;
+
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+	border-radius: var(--border-radius);
+
+	z-index: 5;
+}
+
+.popup-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+textarea {
+	resize: vertical;
+
+	height: 100px;
+}
+
+strong {
+	font-weight: 700;
+}
 
 
 nav {
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 1000;
+    z-index: 10;
 
     width: 100%;
     height: var(--normal-height);
@@ -103,6 +168,7 @@ nav {
 
 nav ul {
     display: flex;
+	align-items: center;
     gap: 1rem;
 
     list-style: none;
@@ -110,5 +176,46 @@ nav ul {
 
 
 main {
-    padding: var(--page-padding);
+    padding: 5rem var(--page-padding);
+	display: flex;
+
+	flex-direction: column;
+	gap: 1rem;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+input, textarea, button, select {
+	padding: 0.5rem;
+	border: 1px solid black;
+	border-radius: var(--border-radius);
+	outline: none;
+
+	transition: 0.3s;
+
+	background-color: white;
+}
+
+input:focus, textarea:focus {
+	background-color: lightgray;
+}
+
+button {
+	background: rgb(33, 33, 33);
+	color: white;
+	cursor: pointer;
+}
+
+button:hover {
+	background-color: lightgray;
+	color: black;
 }
